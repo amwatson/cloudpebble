@@ -25,7 +25,7 @@ $(function() {
         gMainContent.addClass('show-login');
     }
 
-    $('#firebase-login-btn').click(function() {
+    $('.btn-firebase-auth').click(function() {
         $('#provider-chooser').modal('show');
     });
 
