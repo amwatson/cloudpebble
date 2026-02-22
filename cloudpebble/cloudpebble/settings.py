@@ -385,7 +385,7 @@ DEFAULT_TEMPLATE = None
 
 EXPORT_DIRECTORY = os.getcwd() + '/user_data/export/'
 
-EXPORT_ROOT = _environ.get('EXPORT_ROOT', 'http://localhost:8001/export/')
+EXPORT_ROOT = _environ.get('EXPORT_ROOT', PUBLIC_URL.rstrip('/') + '/export/')
 
 # Cloud Dev Connection / legacy GitHub auth app
 GITHUB_DEV_CLIENT_ID = _environ.get('GITHUB_DEV_CLIENT_ID', _environ.get('GITHUB_ID', ''))

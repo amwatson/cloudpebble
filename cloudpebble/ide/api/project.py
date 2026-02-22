@@ -2,6 +2,7 @@ import re
 import json
 import time
 import logging
+import os
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -572,6 +573,30 @@ def build_download(request, project_id, build_id, filename):
     content_type = DOWNLOAD_CONTENT_TYPES.get(filename, 'application/octet-stream')
     data = s3.read_file('builds', s3_path)
     response = HttpResponse(data, content_type=content_type)
+    response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+    return response
+
+
+@require_safe
+@login_required
+def export_download(request, export_key):
+    filename = os.path.basename(export_key) or 'cloudpebble-export.zip'
+
+    if settings.AWS_ENABLED:
+        import utils.s3 as s3
+        data = s3.read_file('export', export_key)
+        response = HttpResponse(data, content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+        return response
+
+    export_root = os.path.abspath(settings.EXPORT_DIRECTORY)
+    export_path = os.path.abspath(os.path.join(export_root, export_key))
+    if not export_path.startswith(export_root + os.sep):
+        return HttpResponse(status=404)
+    if not os.path.exists(export_path):
+        return HttpResponse(status=404)
+    with open(export_path, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='application/zip')
     response['Content-Disposition'] = 'attachment; filename="%s"' % filename
     return response
 

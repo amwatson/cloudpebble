@@ -12,6 +12,7 @@ from ide.api.project import (
     build_log,
     build_info,
     build_download,
+    export_download,
     create_project,
     save_project_settings,
     save_project_dependencies,
@@ -193,6 +194,11 @@ urlpatterns = [
         r"^project/(?P<project_id>\d+)/build/(?P<build_id>\d+)/download/(?P<filename>[a-z._]+)",
         build_download,
         name="build_download",
+    ),
+    re_path(
+        r"^export/(?P<export_key>[0-9a-f]{32}/[\w.-]+\.zip)$",
+        export_download,
+        name="export_download",
     ),
     re_path(r"^project/(?P<project_id>\d+)/export", begin_export, name="begin_export"),
     re_path(

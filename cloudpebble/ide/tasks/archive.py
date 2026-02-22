@@ -26,6 +26,10 @@ __author__ = 'katharine'
 logger = logging.getLogger(__name__)
 
 
+def _public_export_url(path):
+    return "/ide/export/%s" % path.lstrip('/')
+
+
 def add_project_to_archive(z, project, prefix='', suffix=''):
     source_files = SourceFile.objects.filter(project=project)
     resources = ResourceFile.objects.filter(project=project)
@@ -68,11 +72,11 @@ def create_archive(project_id):
             os.makedirs(os.path.dirname(outfile), 0o755)
             shutil.copy(filename, outfile)
             os.chmod(outfile, 0o644)
-            return '%s%s/%s.zip' % (settings.EXPORT_ROOT, u, prefix)
+            return _public_export_url('%s/%s.zip' % (u, prefix))
         else:
             outfile = '%s/%s.zip' % (u, prefix)
             s3.upload_file('export', outfile, filename, public=True, content_type='application/zip')
-            return '%s%s' % (settings.EXPORT_ROOT, outfile)
+            return _public_export_url(outfile)
 
 
 @shared_task(acks_late=True)
@@ -94,11 +98,11 @@ def export_user_projects(user_id):
             os.makedirs(os.path.dirname(outfile), 0o755)
             shutil.copy(filename, outfile)
             os.chmod(outfile, 0o644)
-            return '%s%s/%s.zip' % (settings.EXPORT_ROOT, u, 'cloudpebble-export')
+            return _public_export_url('%s/%s.zip' % (u, 'cloudpebble-export'))
         else:
             outfile = '%s/%s.zip' % (u, 'cloudpebble-export')
             s3.upload_file('export', outfile, filename, public=True, content_type='application/zip')
-            return '%s%s' % (settings.EXPORT_ROOT, outfile)
+            return _public_export_url(outfile)
 
 
 def get_filename_variant(file_name, resource_suffix_map):
