@@ -220,7 +220,8 @@ class Emulator(object):
             'pypkjs',
             '--qemu', '127.0.0.1:%d' % self.bt_port,
             '--port', str(self.ws_port),
-            '--token', self.token,
+            # Use --arg=value form so tokens beginning with '-' are not parsed as flags.
+            '--token=%s' % self.token,
             '--persist', self.persist_dir,
         ] + oauth_arg
         if settings.BLOCK_PRIVATE_ADDRESSES:
