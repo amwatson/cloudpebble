@@ -150,7 +150,8 @@ var SharedPebble = new (function() {
         if (kind & ConnectionType.Qemu) {
             return false;
         }
-        return getPhoneConnectionType() !== 'devconn';
+        var phoneConnectionType = getPhoneConnectionType();
+        return phoneConnectionType === 'clouddev_v2' || phoneConnectionType === 'clouddev';
     }
 
     function syncFirebaseTokenToSession(idToken) {
@@ -333,7 +334,7 @@ var SharedPebble = new (function() {
         if (mConnectionType & ConnectionType.Qemu) {
             return mEmulator.getWebsocketURL();
         }
-        if (getPhoneConnectionType() !== 'devconn') {
+        if (isCloudProxyConnection(mConnectionType)) {
             if (typeof CLOUDPEBBLE_PROXY_V2 !== 'undefined' && CLOUDPEBBLE_PROXY_V2) {
                 return CLOUDPEBBLE_PROXY_V2;
             }
