@@ -3,8 +3,11 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.http import JsonResponse
 
+from ide.views.s3_proxy import s3_builds_proxy
+
 urlpatterns = [
     path('health', lambda request: JsonResponse({'ok': True})),
+    re_path(r'^s3builds/(?P<path>.+)$', s3_builds_proxy),
     re_path(r'^ide/', include('ide.urls', namespace='ide')),
     re_path(r'^accounts/', include('auth.urls')),
     re_path(r'^qr/', include('qr.urls', namespace='qr')),
