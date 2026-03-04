@@ -4,6 +4,17 @@ CloudPebble.Publish = (function() {
     var mCapturing = false;
     var mInitialized = false;
 
+    function setEmulatorTime(pebble, timeMs) {
+        pebble.set_time_utc(timeMs);
+        return Promise.delay(250).then(function() {
+            pebble.set_time_utc(timeMs);
+            return Promise.delay(250);
+        }).then(function() {
+            pebble.set_time_utc(timeMs);
+            return Promise.delay(1000);
+        });
+    }
+
     // Deferred lookup — ConnectionType is defined in pebble.js which may load after this file
     function getConnectionType(platform) {
         var map = {
@@ -380,11 +391,17 @@ CloudPebble.Publish = (function() {
                 } catch (e) {
                     // Ignore errors if emulator disconnects
                 }
-            }, 1000);
+            }, 500);
 
             function clearBacklight() {
                 clearInterval(backlightInterval);
             }
+
+            // Set time to 10:10 for the static screenshot
+            var now = new Date();
+            var screenshotTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10, 10, 0, 0).getTime();
+            statusEl.text('Setting time on ' + platform + '...');
+            return setEmulatorTime(pebble, screenshotTime).then(function() {
 
             statusEl.text('Taking screenshot on ' + platform + '...');
 
@@ -416,6 +433,13 @@ CloudPebble.Publish = (function() {
                     });
                 });
             }).then(function() {
+                // Set time to random HH:MM:58 so GIF captures a minute rollover
+                var randomHour = Math.floor(Math.random() * 12) + 1;
+                var randomMinute = Math.floor(Math.random() * 60);
+                var gifTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), randomHour, randomMinute, 58, 0).getTime();
+                statusEl.text('Setting time for GIF on ' + platform + '...');
+                return setEmulatorTime(pebble, gifTime);
+            }).then(function() {
                 // Record GIF from VNC canvas
                 var canvas = $('#emulator-container canvas')[0];
                 if (!canvas) {
@@ -438,12 +462,16 @@ CloudPebble.Publish = (function() {
                 });
             }).then(function() {
                 clearBacklight();
+                pebble.set_time_utc(Date.now());
                 statusEl.text('Done with ' + platform + '.');
                 updateScreenshotThumbs();
             }, function(err) {
                 clearBacklight();
+                pebble.set_time_utc(Date.now());
                 throw err;
             });
+
+            }); // end setEmulatorTime chain
         });
     }
 
