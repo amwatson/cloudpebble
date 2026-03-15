@@ -109,12 +109,13 @@ def publish_preflight(request, project_id):
             break
 
     # Category options for watchapps
+    # Values must match appstore backend CATEGORY_MAP keys
     category_options = [
         {'value': 'daily', 'label': 'Daily'},
-        {'value': 'tools_and_utilities', 'label': 'Tools & Utilities'},
+        {'value': 'tools', 'label': 'Tools & Utilities'},
         {'value': 'notifications', 'label': 'Notifications'},
         {'value': 'remotes', 'label': 'Remotes'},
-        {'value': 'health_and_fitness', 'label': 'Health & Fitness'},
+        {'value': 'health', 'label': 'Health & Fitness'},
         {'value': 'games', 'label': 'Games'},
     ]
 
@@ -271,9 +272,15 @@ def publish_submit(request, project_id):
         if screenshot_warnings:
             logger.warning("Screenshot upload failures: %s", screenshot_warnings)
 
+        # Extract app ID from response (backend returns {app: {id: ...}} or {id: ...})
+        result_app_id = None
+        if isinstance(result.get('app'), dict):
+            result_app_id = result['app'].get('id')
+        if not result_app_id:
+            result_app_id = result.get('id')
         ret = {
             'published': True,
-            'app_id': result.get('id') or app_id,
+            'app_id': result_app_id or app_id,
         }
         if screenshot_warnings:
             ret['screenshot_warnings'] = screenshot_warnings
