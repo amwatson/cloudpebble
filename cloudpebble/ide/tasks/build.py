@@ -107,11 +107,11 @@ def run_compile(build_result):
                     stderr=subprocess.STDOUT, env=environ
                 )
                 output += subprocess.check_output(
-                    ["pebble", "build"],
+                    ["pebble", "build", "-v"],
                     stderr=subprocess.STDOUT, preexec_fn=_set_resource_limits, env=environ
                 )
         except subprocess.CalledProcessError as e:
-            output = e.output
+            output += e.output
             logger.warning("Build command failed with error:\n%s\n", output)
             success = False
         except Exception as e:
@@ -126,6 +126,24 @@ def run_compile(build_result):
                 temp_file = os.path.join(base_dir, 'build', '%s.pbw' % os.path.basename(base_dir))
             if not os.path.exists(temp_file):
                 success = False
+                output += b'\n\nBuild command exited successfully but did not produce the expected output file.\n'
+                # Try to capture waf's config log for configure-phase errors
+                # that pebble build swallows (exits 0 with just "Build failed.").
+                config_log = os.path.join(base_dir, 'build', 'config.log')
+                if os.path.exists(config_log):
+                    try:
+                        # Read only the last 8KB to avoid memory spikes from huge GCC macro dumps
+                        file_size = os.path.getsize(config_log)
+                        with open(config_log, 'rb') as f:
+                            if file_size > 8192:
+                                f.seek(-8192, 2)
+                                waf_log = b'... (truncated) ...\n' + f.read()
+                            else:
+                                waf_log = f.read()
+                        if waf_log.strip():
+                            output += b'\n--- waf config.log ---\n' + waf_log
+                    except Exception:
+                        pass
                 logger.warning("Success was a lie.")
         finally:
             build_end_time = now()
