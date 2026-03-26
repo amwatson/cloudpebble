@@ -73,7 +73,7 @@ $(function() {
             });
         }).then(function() {
             location.href = '/ide/';
-        }).fail(function(error) {
+        })['catch'](function(error) {
             if (error && error.code === 'auth/account-exists-with-different-credential') {
                 var pendingCred = error.credential;
                 var email = error.customData ? error.customData.email : '';
@@ -105,7 +105,7 @@ $(function() {
             } else if (!error || error.code !== 'auth/popup-closed-by-user') {
                 alert(error.message || error);
             }
-        }).always(function() {
+        })['finally'](function() {
             $('#provider-chooser').find('.btn').removeAttr('disabled');
         });
     });
