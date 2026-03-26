@@ -89,19 +89,30 @@ class IdeRegistrationMissingView(View):
 
 def logout_view(request):
     logout(request)
-    response = redirect("/")
-    # Clear cross-domain session cookie so SSO doesn't re-sign-in
+    response = redirect("/?signed_out=1")
+    # Clear cross-domain session cookie by calling the backend signout endpoint
+    cookie_value = request.COOKIES.get(SESSION_COOKIE_NAME)
+    if cookie_value:
+        try:
+            signout_resp = http_requests.post(
+                f'{settings.APPSTORE_API_BASE}/api/auth/firebase/signout',
+                cookies={SESSION_COOKIE_NAME: cookie_value},
+                timeout=5,
+            )
+            # Forward all Set-Cookie headers from the backend
+            for header_value in signout_resp.headers.get_all('Set-Cookie', []):
+                response['Set-Cookie'] = header_value
+        except Exception as e:
+            logger.warning('Failed to call backend signout: %s', e)
+    # Also clear cookies directly as a fallback
     response.set_cookie(
         SESSION_COOKIE_NAME, '', max_age=0, path='/',
         domain='.repebble.com', secure=True, httponly=True, samesite='Lax',
     )
-    # Also clear any host-scoped cookie
     response.set_cookie(
         SESSION_COOKIE_NAME, '', max_age=0, path='/',
         secure=True, httponly=True, samesite='Lax',
     )
-    # Skip SSO auto-login on the redirect back to splash
-    response.set_cookie('__sso_skip', '1', max_age=5, path='/', samesite='Lax')
     return response
 
 

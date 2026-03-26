@@ -13,9 +13,14 @@ $(function() {
 
     var gMainContent = $('.main-container');
 
+    // If we just signed out, clear Firebase client-side auth too
+    var justSignedOut = location.search.indexOf('signed_out=1') !== -1;
+    if (justSignedOut) {
+        firebase.auth().signOut();
+    }
+
     // SSO: if cross-domain session cookie exists, auto-sign-in via custom token
-    // Skip if we just logged out (short-lived __sso_skip cookie)
-    if (document.cookie.indexOf('__sso_skip') === -1) {
+    if (!justSignedOut) {
         $.get('/accounts/api/sso-custom-token').then(function(data) {
             if (data.customToken) {
                 return firebase.auth().signInWithCustomToken(data.customToken).then(function(result) {
