@@ -452,6 +452,8 @@ FIREBASE_PROJECT_ID = _environ.get('FIREBASE_PROJECT_ID', 'coreapp-ce061')
 
 APPSTORE_API_BASE = _environ.get('APPSTORE_API_BASE', 'https://appstore-api.repebble.com')
 
+REPEBBLE_SESSION_SECRET = _environ.get('REPEBBLE_SESSION_SECRET', _environ.get('DASHBOARD_SESSION_SECRET', ''))
+
 WAF_NODE_PATH = _environ.get('WAF_NODE_PATH', None)
 
 # import djcelery  # Removed for Django 4.2

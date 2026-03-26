@@ -1,5 +1,7 @@
 import logging
+import time
 
+import jwt
 from registration.backends.simple.views import RegistrationView
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -7,6 +9,7 @@ from django.contrib.auth.models import User
 from django.views.generic import View
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect
+from django.db import connections
 from django.http.response import Http404
 from django.conf import settings
 from django.utils.translation import gettext as _
@@ -15,6 +18,61 @@ from google.auth.transport import requests as google_requests
 from ide.api import json_failure, json_response
 
 logger = logging.getLogger(__name__)
+
+SESSION_COOKIE_NAME = '__session_dashboard'
+SESSION_MAX_AGE = 14 * 24 * 60 * 60  # 14 days
+
+
+def _set_developer_cookie(response, firebase_uid, email):
+    """Set cross-domain developer session cookie if the user is a registered developer."""
+    secret = settings.REPEBBLE_SESSION_SECRET
+    if not secret:
+        return
+
+    try:
+        with connections['default'].cursor() as cursor:
+            cursor.execute(
+                'SELECT id, name, email FROM developers WHERE firebase_uid = %s LIMIT 1',
+                [firebase_uid],
+            )
+            row = cursor.fetchone()
+            if not row:
+                cursor.execute(
+                    'SELECT id, name, email FROM developers WHERE email = %s AND firebase_uid IS NULL LIMIT 1',
+                    [email],
+                )
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute(
+                        'UPDATE developers SET firebase_uid = %s WHERE id = %s',
+                        [firebase_uid, row[0]],
+                    )
+
+        if not row:
+            return
+
+        now = int(time.time())
+        payload = {
+            'uid': firebase_uid,
+            'email': email,
+            'developerId': row[0],
+            'developerName': row[1] or '',
+            'iat': now,
+            'exp': now + SESSION_MAX_AGE,
+        }
+        token = jwt.encode(payload, secret, algorithm='HS256')
+        response.set_cookie(
+            SESSION_COOKIE_NAME,
+            token,
+            max_age=SESSION_MAX_AGE,
+            path='/',
+            domain='.repebble.com',
+            secure=True,
+            httponly=True,
+            samesite='Lax',
+        )
+    except Exception as e:
+        logger.warning('Failed to set developer cookie: %s', e)
 
 
 class IdeRegistrationView(RegistrationView):
@@ -81,7 +139,10 @@ def firebase_login(request):
     # Store the verified Firebase token in session for Cloud Dev Connection v2.
     request.session['firebase_id_token'] = token
     request.session['firebase_id_token_exp'] = decoded.get('exp')
-    return json_response()
+
+    response = json_response()
+    _set_developer_cookie(response, decoded['sub'], email)
+    return response
 
 
 @require_POST

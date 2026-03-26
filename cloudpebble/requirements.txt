@@ -33,6 +33,9 @@ oauthlib==3.2.2
 google-auth==2.27.0
 google-auth-oauthlib==1.2.0
 
+# JWT for cross-domain session cookies
+PyJWT==2.8.0
+
 # Asset management
 django-bower==5.2.0
 
