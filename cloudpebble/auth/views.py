@@ -2,14 +2,16 @@ import logging
 import time
 
 import jwt
+import requests as http_requests
 from registration.backends.simple.views import RegistrationView
 from django.contrib.auth import logout, login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.views.generic import View
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.shortcuts import render, redirect
 from django.db import connections
+from django.http import JsonResponse
 from django.http.response import Http404
 from django.conf import settings
 from django.utils.translation import gettext as _
@@ -179,3 +181,28 @@ def firebase_refresh_token(request):
     request.session['firebase_id_token'] = token
     request.session['firebase_id_token_exp'] = decoded.get('exp')
     return json_response()
+
+
+@require_GET
+def sso_custom_token(request):
+    """Proxy to appstore-api for a Firebase custom token (cross-domain SSO).
+
+    Reads the __session_dashboard cookie from the user's request and forwards
+    it to the backend, which verifies it and returns a Firebase custom token.
+    """
+    cookie_value = request.COOKIES.get(SESSION_COOKIE_NAME)
+    if not cookie_value:
+        return JsonResponse({'error': 'No session'}, status=401)
+
+    try:
+        resp = http_requests.get(
+            f'{settings.APPSTORE_API_BASE}/api/auth/firebase/custom-token',
+            cookies={SESSION_COOKIE_NAME: cookie_value},
+            timeout=5,
+        )
+        if resp.ok:
+            return JsonResponse(resp.json())
+        return JsonResponse({'error': 'Failed to get token'}, status=resp.status_code)
+    except Exception as e:
+        logger.warning('SSO custom token proxy failed: %s', e)
+        return JsonResponse({'error': 'SSO unavailable'}, status=502)
