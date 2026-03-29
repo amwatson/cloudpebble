@@ -1,0 +1,370 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}CloudPebble – {{ app_title }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'ide/css/ide.css' %}">
+<link rel="stylesheet" href="{% static 'ide/css/ib.css' %}">
+<style>
+html, body {
+    height: 100%;
+    overflow: auto;
+    background-color: #1a1a1a;
+}
+.run-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 40px;
+}
+.run-app-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.run-app-info h2 {
+    color: #fff;
+    font-size: 28px;
+    margin: 0 0 4px 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.run-app-info .author {
+    color: #888;
+    font-size: 16px;
+}
+.run-emulator-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+/* Override IDE sidebar positioning to make emulator standalone */
+#emulator-container {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin: 0 auto;
+}
+.run-platforms {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.run-platforms .platform-btn {
+    padding: 6px 16px;
+    border-radius: 16px;
+    border: 1px solid #444;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transition: all 0.2s;
+}
+.run-platforms .platform-btn:hover {
+    border-color: #888;
+    color: #fff;
+}
+.run-platforms .platform-btn.active {
+    background: #009688;
+    border-color: #009688;
+    color: #fff;
+}
+.run-status {
+    color: #888;
+    font-size: 13px;
+    text-align: center;
+    min-height: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1 class="cloudpebble-logo" style="padding-left: 40px;">
+        <span class="cloudpebble-logo-cloud">Cloud</span><span class="cloudpebble-logo-pebble">Pebble</span>
+    </h1>
+    <div class="header-right">
+        <ul class="nav-pills">
+            <li><a href="https://developer.repebble.com/" target="_blank" class="btn">{% trans 'Documentation' %}</a></li>
+            <li><a href="{% url 'ide:index' %}" class="btn">{% trans 'Projects' %}</a></li>
+            <li><a href="{% url 'ide:settings' %}" class="btn">{% trans 'Settings' %}</a></li>
+            <li><a href="{% url 'logout' %}" class="btn">{% trans 'Sign out' %}</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="run-container">
+    <div class="run-app-info">
+        <h2>{{ app_title }}</h2>
+        <span class="author">by {{ app_author }}</span>
+    </div>
+
+    <div class="run-emulator-wrapper">
+        <div id="emulator-container">
+            <canvas width="144" height="168"></canvas>
+            <div class="up qemu-button"></div>
+            <div class="down qemu-button"></div>
+            <div class="back qemu-button"></div>
+            <div class="select qemu-button"></div>
+            <img src="{% static 'ide/img/configure.png' %}" class="configure">
+        </div>
+    </div>
+
+    <div class="run-platforms" id="platform-buttons">
+        {% for p in platform_choices %}
+        <button class="platform-btn{% if p.id == default_platform %} active{% endif %}"
+                data-platform="{{ p.id }}">
+            {{ p.name }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <div class="run-status" id="run-status">Loading emulator...</div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Install progress modal -->
+<div id="phone-install-progress" class="modal hide fade" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h3>{% trans 'Install App' %}</h3>
+    </div>
+    <div class="modal-body">
+        <p>{% trans 'Installing app on your watch…' %}</p>
+        <div class="progress progress-striped active">
+            <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button data-dismiss="modal" class="btn hide dismiss-btn">{% trans 'Dismiss' %}</button>
+        <button class="btn hide logs-btn btn-primary">{% trans 'View logs' context "button to look at logs" %}</button>
+    </div>
+</div>
+<!-- Generic progress modal -->
+<div id="generic-progress" class="modal hide fade" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h3>Doing a thing…</h3>
+    </div>
+    <div class="modal-body text-center" id="generic-progress-text">
+        <p></p>
+        <div class="progress progress-striped active">
+            <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div>
+<!-- Modal warning prompt (used by SharedPebble disconnect) -->
+<div id="modal-warning-prompt" class="modal hide fade" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h3 id="modal-warning-prompt-title">Modal header</h3>
+    </div>
+    <div class="modal-body">
+        <p id="modal-warning-prompt-warning">Modal warning</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">{% trans 'Cancel' %}</button>
+        <button class="btn btn-danger" id="modal-warning-prompt-button">{% trans 'Continue' %}</button>
+    </div>
+</div>
+<!-- QEMU sensor prompt -->
+<div id="qemu-sensor-prompt" class="modal hide fade" tabindex="-1" role="dialog">
+    <div class="modal-header">
+        <h3>{% trans 'Compass and Accelerometer' %}</h3>
+    </div>
+    <div class="modal-body">
+        <div>
+            {% blocktrans with url=phone_shorturl %}<p>You can use your mobile phone to send sensor data to the emulator.<br>
+            In your mobile browser, go to<br><span class="cpbl-url">{{ url }}</span><br>and enter this code:</p>{% endblocktrans %}
+            <p class="cpbl-token">…</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">{% trans 'Okay' %}</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+// Stubs required by compile.js and other IDE JS
+var PROJECT_ID = 0;
+var USER_ID = {{ request.user.id }};
+var True = true;
+var False = false;
+var USER_SETTINGS = {
+    theme: "monokai",
+    autocomplete: 0,
+    keybinds: "default",
+    use_spaces: true,
+    tab_width: 4,
+    token: "{{ token }}",
+    firebase_token: "{{ firebase_token|escapejs }}",
+    firebase_token_exp: {{ firebase_token_exp|default:"0" }}
+};
+var LIBPEBBLE_PROXY = {{ libpebble_proxy|safe }};
+var CLOUDPEBBLE_PROXY = {{ cloudpebble_proxy|safe }};
+var CLOUDPEBBLE_PROXY_V2 = null;
+
+var RUN_APP_ID = "{{ app_id }}";
+var PBW_URL = "/ide/run/{{ app_id }}/pbw";
+var DEFAULT_PLATFORM = "{{ default_platform }}";
+var SUPPORTED_PLATFORMS = {{ supported_platforms_json|safe }};
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script type="text/javascript">
+if (window.firebase && firebase.apps && !firebase.apps.length) {
+    firebase.initializeApp({
+        apiKey: "AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc",
+        authDomain: "coreapp-ce061.firebaseapp.com",
+        projectId: "coreapp-ce061",
+        storageBucket: "coreapp-ce061.firebasestorage.app",
+        messagingSenderId: "460977838956",
+        appId: "1:460977838956:web:9a11a68ec78008fe303149",
+        measurementId: "G-J99JXFWEZL"
+    });
+}
+</script>
+
+<script src="/ide/jsi18n/"></script>
+<script src="{% static 'ide/js/json_parse.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/csrf.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/cloudpebble.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/libpebble/proxysocket.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/libpebble/libpebble.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/crash_handler.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/pebble.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/qemu.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/emulator.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/compile.js' %}" type="text/javascript"></script>
+<script src="{% static 'noVNC/include/util.js' %}" type="text/javascript"></script>
+<script src="{% static 'text-encoding/lib/encoding.js' %}" type="text/javascript"></script>
+
+<script type="text/javascript">
+var URL_VNC_INCLUDES = ["{% static 'noVNC/include/base64.js' %}",
+                        "{% static 'noVNC/include/websock.js' %}",
+                        "{% static 'noVNC/include/des.js' %}",
+                        "{% static 'noVNC/include/keysymdef.js' %}",
+                        "{% static 'noVNC/include/keyboard.js' %}",
+                        "{% static 'noVNC/include/input.js' %}",
+                        "{% static 'noVNC/include/display.js' %}",
+                        "{% static 'noVNC/include/jsunzip.js' %}",
+                        "{% static 'ide/external/vnc/rfb.js' %}",
+                        "{% static 'noVNC/include/keysym.js' %}"];
+var URL_BOOT_IMG = {
+    aplite: {url: "{% static 'ide/img/boot-aplite.png' %}", size: [144, 168]},
+    basalt: {url: "{% static 'ide/img/boot-basalt.png' %}", size: [144, 168]},
+    chalk: {url: "{% static 'ide/img/boot-chalk.png' %}", size: [180, 180]},
+    diorite: {url: "{% static 'ide/img/boot-aplite.png' %}", size: [144, 168]},
+    emery: {url: "{% static 'ide/img/boot-emery.png' %}", size: [200, 228]},
+    gabbro: {url: "{% static 'ide/img/boot-gabbro.png' %}", size: [260, 260]},
+    flint: {url: "{% static 'ide/img/boot-aplite.png' %}", size: [144, 168]}
+};
+
+// User-facing platform names
+var PLATFORM_DISPLAY_NAMES = {
+    aplite: 'OG Pebble/Steel',
+    basalt: 'Time/Time Steel',
+    chalk: 'Time Round',
+    diorite: '2/2HR',
+    emery: 'Time 2',
+    flint: '2 Duo',
+    gabbro: 'Round 2'
+};
+
+// Map platform names to ConnectionType values used by SharedPebble
+var PLATFORM_CONNECTION_MAP = {
+    aplite: ConnectionType.QemuAplite,
+    basalt: ConnectionType.QemuBasalt,
+    chalk: ConnectionType.QemuChalk,
+    diorite: ConnectionType.QemuDiorite,
+    emery: ConnectionType.QemuEmery,
+    gabbro: ConnectionType.QemuGabbro,
+    flint: ConnectionType.QemuFlint
+};
+
+// Stub CloudPebble.ProjectInfo so compile.js doesn't crash
+CloudPebble.ProjectInfo = {
+    type: 'native',
+    sdk_version: '3',
+    app_uuid: '',
+    name: '{{ app_title|escapejs }}',
+    app_is_watchface: true
+};
+CloudPebble.ProjectProperties = {
+    Init: function() {},
+    is_runnable: true,
+    js_only: false,
+    supports_message_keys: false,
+    supports_aplite: true
+};
+
+// Dummy build object with the PBW URL and sizes for all platforms
+var mRunBuild = {
+    download: PBW_URL,
+    sizes: {}
+};
+_.each(SUPPORTED_PLATFORMS, function(p) {
+    mRunBuild.sizes[p] = {binary: 65536, resources: 65536, worker: 0};
+});
+
+var mCurrentPlatform = null;
+
+function setStatus(text) {
+    document.getElementById('run-status').textContent = text;
+}
+
+function launchAndInstall(platform) {
+    if (mCurrentPlatform === platform) return;
+
+    // Kill existing emulator if switching platforms
+    if (mCurrentPlatform) {
+        SharedPebble.disconnect(true);
+    }
+    mCurrentPlatform = platform;
+
+    // Update button states
+    $('#platform-buttons .platform-btn').removeClass('active');
+    $('#platform-buttons .platform-btn[data-platform="' + platform + '"]').addClass('active');
+
+    var kind = PLATFORM_CONNECTION_MAP[platform];
+    var displayName = PLATFORM_DISPLAY_NAMES[platform] || platform;
+    setStatus('Launching ' + displayName + ' emulator...');
+
+    CloudPebble.Compile.DoInstall({kind: kind, build: mRunBuild}).then(function() {
+        // Auto-dismiss the install modal — no need for logs in run mode
+        $('#phone-install-progress').modal('hide');
+        setStatus('Running on ' + displayName);
+        // Auto-grab keyboard so arrow keys work without clicking the canvas first.
+        // In the IDE this requires a click because the editor also needs keyboard,
+        // but on the run page the emulator is the only interactive element.
+        $('#emulator-container canvas').click();
+    }).catch(function(err) {
+        setStatus('Error: ' + err.message);
+    });
+}
+
+// Init
+$(function() {
+    jquery_csrf_setup();
+    CloudPebble.Emulator.init();
+
+    // Platform button click handlers
+    $('#platform-buttons .platform-btn').click(function() {
+        var platform = $(this).data('platform');
+        launchAndInstall(platform);
+    });
+
+    // Close emulator settings popover when clicking outside
+    $(document).on('click', function(e) {
+        var $configure = $('#emulator-container .configure');
+        if ($configure.data('popover') && !$(e.target).closest('.popover, .configure').length) {
+            $configure.popover('hide');
+        }
+    });
+
+    // Auto-launch on default platform
+    launchAndInstall(DEFAULT_PLATFORM);
+});
+</script>
+{% endblock %}
