@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 import requests
 from django.conf import settings
@@ -58,9 +59,14 @@ def _get_pbw_url(app_info):
 
 
 @require_safe
-@login_required
 @ensure_csrf_cookie
 def run_app(request, app_id):
+    if not request.user.is_authenticated:
+        return render(request, 'ide/run_login.html', {
+            'app_id': app_id,
+            'next_url': request.get_full_path(),
+        })
+
     app_info = _fetch_app_info(app_id)
     if not app_info:
         raise Http404("App not found")
@@ -85,10 +91,22 @@ def run_app(request, app_id):
     firebase_token = request.session.get('firebase_id_token', '')
     firebase_token_exp = request.session.get('firebase_id_token_exp', '')
 
+    app_title = app_info.get('title', 'Unknown App')
+    slug = re.sub(r'[^a-z0-9]+', '-', app_title.lower()).strip('-')
+    app_store_url = 'https://apps.repebble.com/%s_%s' % (slug, app_id)
+
+    app_type = app_info.get('type', 'watchapp')
+    app_hearts = app_info.get('hearts', 0)
+    app_uuid = app_info.get('uuid', '')
+
     return render(request, 'ide/run.html', {
         'app_id': app_id,
-        'app_title': app_info.get('title', 'Unknown App'),
+        'app_title': app_title,
         'app_author': app_info.get('author', 'Unknown'),
+        'app_store_url': app_store_url,
+        'app_type': app_type,
+        'app_hearts': app_hearts,
+        'app_uuid': app_uuid,
         'platform_choices': platform_choices,
         'platform_choices_json': json.dumps(platform_choices),
         'supported_platforms_json': json.dumps(supported_platforms),

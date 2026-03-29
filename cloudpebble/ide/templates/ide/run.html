@@ -5,19 +5,24 @@
 {% block title %}CloudPebble – {{ app_title }}{% endblock %}
 
 {% block head %}
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <link rel="stylesheet" href="{% static 'ide/css/ide.css' %}">
 <link rel="stylesheet" href="{% static 'ide/css/ib.css' %}">
 <style>
 html, body {
     height: 100%;
     overflow: auto;
-    background-color: #1a1a1a;
+    background-color: #333;
+}
+.run-container {
+    background-color: #292929;
 }
 .run-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 40px;
+    padding: 40px 20px 30px;
+    overflow-x: hidden;
 }
 .run-app-info {
     text-align: center;
@@ -29,6 +34,14 @@ html, body {
     margin: 0 0 4px 0;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
+.run-app-info h2 a {
+    color: #fff;
+    text-decoration: none;
+}
+.run-app-info h2 a:hover {
+    text-decoration: underline;
+    color: #ccc;
+}
 .run-app-info .author {
     color: #888;
     font-size: 16px;
@@ -37,12 +50,16 @@ html, body {
     position: relative;
     margin-bottom: 20px;
 }
-/* Override IDE sidebar positioning to make emulator standalone */
+/* Override IDE sidebar positioning to make emulator standalone and centered */
 #emulator-container {
     position: relative;
     top: auto;
     left: auto;
     margin: 0 auto;
+}
+.run-platforms {
+    flex-wrap: wrap;
+    justify-content: center;
 }
 .run-platforms {
     display: flex;
@@ -69,11 +86,108 @@ html, body {
     border-color: #009688;
     color: #fff;
 }
+.run-app-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+.run-heart-btn {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    border: 1px solid #555;
+    border-radius: 17px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #888;
+    background: transparent;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.run-heart-btn:hover {
+    border-color: #ff4a3a;
+    color: #ff4a3a;
+}
+.run-heart-btn.hearted {
+    border-color: #ff4a3a;
+    color: #ff4a3a;
+}
+.run-heart-btn svg {
+    display: block;
+}
+.run-add-btn {
+    border: 1px solid #ff4a3a;
+    background: #ff4a3a;
+    color: #fff;
+    border-radius: 12px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 8px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.run-add-btn:hover:enabled {
+    background: #ff5a49;
+    border-color: #ff5a49;
+}
+.run-add-btn.added {
+    border-color: #767676;
+    background: #767676;
+    color: #e7e7e7;
+    cursor: default;
+}
+.run-settings-hint {
+    color: #666;
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 12px;
+    font-style: italic;
+}
+.run-platforms-label {
+    color: #888;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 8px;
+}
 .run-status {
     color: #888;
     font-size: 13px;
     text-align: center;
     min-height: 20px;
+}
+
+/* Mobile: scale up the emulator, shrink nav, tighten spacing */
+@media (max-width: 600px) {
+    .run-container {
+        padding: 20px 10px 20px;
+    }
+    .run-app-info h2 {
+        font-size: 22px;
+    }
+    .run-app-info .author {
+        font-size: 14px;
+    }
+    .run-emulator-wrapper {
+        transform: scale(1.3);
+        transform-origin: center top;
+        margin-bottom: 80px;
+    }
+    .run-platforms .platform-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .run-platforms {
+        gap: 6px;
+    }
+    /* Hide non-essential header links on mobile */
+    .header .header-right .nav-pills li:first-child {
+        display: none;
+    }
 }
 </style>
 {% endblock %}
@@ -95,8 +209,19 @@ html, body {
 
 <div class="run-container">
     <div class="run-app-info">
-        <h2>{{ app_title }}</h2>
+        <h2><a href="{{ app_store_url }}" target="_blank">{{ app_title }}</a></h2>
         <span class="author">by {{ app_author }}</span>
+        <div class="run-app-actions">
+            <button type="button" class="run-heart-btn" id="heart-btn">
+                <svg viewBox="44 34 1 20" width="15" height="13">
+                    <path fill="currentColor" d="M44.509,52.494c0.788-0.776,5.29-5.21,8.104-7.98c2.521-2.482,2.467-6.1,0.175-8.345c-2.292-2.245-5.999-2.235-8.279,0.022c-2.28-2.257-5.987-2.267-8.279-0.022c-2.292,2.245-2.346,5.863,0.175,8.345C39.219,47.284,43.721,51.718,44.509,52.494z"></path>
+                </svg>
+                <span id="heart-count">{{ app_hearts }}</span>
+            </button>
+            <button type="button" class="run-add-btn" id="add-to-locker-btn">
+                {% if app_type == 'watchface' %}Add to My Faces{% else %}Add to My Apps{% endif %}
+            </button>
+        </div>
     </div>
 
     <div class="run-emulator-wrapper">
@@ -110,6 +235,11 @@ html, body {
         </div>
     </div>
 
+    <div class="run-settings-hint" id="settings-hint">
+        <span>Tap the gear to change watch settings</span>
+    </div>
+
+    <div class="run-platforms-label">Try on...</div>
     <div class="run-platforms" id="platform-buttons">
         {% for p in platform_choices %}
         <button class="platform-btn{% if p.id == default_platform %} active{% endif %}"
@@ -205,6 +335,8 @@ var CLOUDPEBBLE_PROXY = {{ cloudpebble_proxy|safe }};
 var CLOUDPEBBLE_PROXY_V2 = null;
 
 var RUN_APP_ID = "{{ app_id }}";
+var RUN_APP_UUID = "{{ app_uuid }}";
+var RUN_APP_TYPE = "{{ app_type }}";
 var PBW_URL = "/ide/run/{{ app_id }}/pbw";
 var DEFAULT_PLATFORM = "{{ default_platform }}";
 var SUPPORTED_PLATFORMS = {{ supported_platforms_json|safe }};
@@ -212,6 +344,7 @@ var SUPPORTED_PLATFORMS = {{ supported_platforms_json|safe }};
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script type="text/javascript">
 if (window.firebase && firebase.apps && !firebase.apps.length) {
     firebase.initializeApp({
@@ -314,13 +447,22 @@ function setStatus(text) {
     document.getElementById('run-status').textContent = text;
 }
 
+// Gabbro (Round 2) may not have native binaries — some apps run scaled up from Chalk.
+// If gabbro install fails, automatically retry on chalk.
+var PLATFORM_FALLBACK = {
+    gabbro: 'chalk'
+};
+
+function doInstall(kind, displayName) {
+    return CloudPebble.Compile.DoInstall({kind: kind, build: mRunBuild}).then(function() {
+        $('#phone-install-progress').modal('hide');
+        setStatus('Running on ' + displayName);
+        $('#emulator-container canvas').click();
+    });
+}
+
 function launchAndInstall(platform) {
     if (mCurrentPlatform === platform) return;
-
-    // Kill existing emulator if switching platforms
-    if (mCurrentPlatform) {
-        SharedPebble.disconnect(true);
-    }
     mCurrentPlatform = platform;
 
     // Update button states
@@ -331,15 +473,18 @@ function launchAndInstall(platform) {
     var displayName = PLATFORM_DISPLAY_NAMES[platform] || platform;
     setStatus('Launching ' + displayName + ' emulator...');
 
-    CloudPebble.Compile.DoInstall({kind: kind, build: mRunBuild}).then(function() {
-        // Auto-dismiss the install modal — no need for logs in run mode
-        $('#phone-install-progress').modal('hide');
-        setStatus('Running on ' + displayName);
-        // Auto-grab keyboard so arrow keys work without clicking the canvas first.
-        // In the IDE this requires a click because the editor also needs keyboard,
-        // but on the run page the emulator is the only interactive element.
-        $('#emulator-container canvas').click();
+    doInstall(kind, displayName).catch(function(err) {
+        // If install was rejected and there's a fallback platform, try that instead.
+        var fallback = PLATFORM_FALLBACK[platform];
+        if (fallback && /rejected/i.test(err.message)) {
+            $('#phone-install-progress').modal('hide');
+            var fallbackKind = PLATFORM_CONNECTION_MAP[fallback];
+            setStatus('Retrying on ' + PLATFORM_DISPLAY_NAMES[fallback] + '...');
+            return doInstall(fallbackKind, displayName);
+        }
+        return Promise.reject(err);
     }).catch(function(err) {
+        $('#phone-install-progress').modal('hide');
         setStatus('Error: ' + err.message);
     });
 }
@@ -361,6 +506,54 @@ $(function() {
         if ($configure.data('popover') && !$(e.target).closest('.popover, .configure').length) {
             $configure.popover('hide');
         }
+    });
+
+    // Heart button
+    var mHearted = false;
+    var mHeartCount = {{ app_hearts }};
+    $('#heart-btn').click(function() {
+        var token = USER_SETTINGS.firebase_token;
+        if (!token) return;
+        var nextHearted = !mHearted;
+        var method = nextHearted ? 'POST' : 'DELETE';
+        $.ajax({
+            url: 'https://appstore-api.repebble.com/api/v1/apps/id/' + RUN_APP_ID + '/heart',
+            method: method,
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function() {
+                mHearted = nextHearted;
+                mHeartCount += nextHearted ? 1 : -1;
+                $('#heart-count').text(mHeartCount);
+                $('#heart-btn').toggleClass('hearted', mHearted);
+            }
+        });
+    });
+
+    // Add to locker button
+    var mLockerAdded = false;
+    $('#add-to-locker-btn').click(function() {
+        if (mLockerAdded || !RUN_APP_UUID) return;
+        var btn = $(this);
+        btn.text('Adding...');
+        var user = firebase.auth().currentUser;
+        if (!user) {
+            btn.text(RUN_APP_TYPE === 'watchface' ? 'Add to My Faces' : 'Add to My Apps');
+            return;
+        }
+        var db = firebase.firestore();
+        var docId = RUN_APP_ID + '-' + RUN_APP_UUID;
+        db.collection('lockers').doc(user.uid).collection('entries').doc(docId).set({
+            uuid: RUN_APP_UUID,
+            appstoreId: RUN_APP_ID,
+            appstoreSource: 'https://appstore-api.repebble.com/api',
+            timelineToken: null
+        }).then(function() {
+            mLockerAdded = true;
+            btn.text(RUN_APP_TYPE === 'watchface' ? 'In My Faces' : 'In My Apps');
+            btn.addClass('added');
+        }).catch(function() {
+            btn.text(RUN_APP_TYPE === 'watchface' ? 'Add to My Faces' : 'Add to My Apps');
+        });
     });
 
     // Auto-launch on default platform
