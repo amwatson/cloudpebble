@@ -85,5 +85,5 @@ def _spin_up_server(request):
             import traceback
             traceback.print_exc()
         logger.warning("Server %s failed; trying another.", server)
-    # If we get out of here, something went wrong.
-    raise Exception('No YCM servers available')
+    # No servers responded — fail gracefully so the frontend can skip code completion.
+    return {'success': False, 'error': 'No YCM servers available'}

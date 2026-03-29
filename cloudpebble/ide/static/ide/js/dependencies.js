@@ -615,13 +615,12 @@ CloudPebble.Dependencies = (function() {
             dependencies_template = $('#dependencies-pane-template').remove().removeClass('hide');
             alerts.init(dependencies_template);
 
-            alerts.show_progress();
             CloudPebble.YCM.initialise().then(function(data) {
-                if (data.libraries) {
+                if (data && data.libraries) {
                     update_header_file_list(data.libraries)
                 }
-            }).finally(function() {
-                alerts.hide_progress();
+            }).catch(function() {
+                // Code completion unavailable — not an error for the IDE
             });
         },
         GetHeaderFileNames: function() {

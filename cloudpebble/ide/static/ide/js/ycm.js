@@ -135,7 +135,8 @@ CloudPebble.YCM = new (function() {
                 }
             }).catch(function() {
                 mFailed = true;
-                $('.prepare-autocomplete').text(gettext("Code completion resync failed."));
+                $('.prepare-autocomplete').hide();
+                $('.footer-credits').show();
             });
         });
     }
@@ -171,8 +172,8 @@ CloudPebble.YCM = new (function() {
                 return spinup_data;
             }).catch(function(e) {
                 mFailed = true;
-                $('.prepare-autocomplete').text(gettext("Code completion unavailable."));
-                throw e;
+                $('.prepare-autocomplete').hide();
+                $('.footer-credits').show();
             });
         return mInitPromise;
 
