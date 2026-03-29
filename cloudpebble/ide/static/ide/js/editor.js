@@ -211,7 +211,7 @@ CloudPebble.Editor = (function() {
             function file_kind_in(options) {
                 return _.contains(options, file_kind);
             }
-            var language_has_autocomplete = (file_kind == 'c');
+            var language_has_autocomplete = (file_kind == 'c' || file_kind == 'js');
             var is_autocompleting = false;
             var settings = {
                 indentUnit: USER_SETTINGS.tab_width,
@@ -857,7 +857,10 @@ CloudPebble.Editor = (function() {
     function init() {
         init_create_prompt();
         CodeMirror.commands.autocomplete = function(cm) {
-            cm.showHint({hint: CloudPebble.Editor.Autocomplete.complete, completeSingle: false});
+            var hintFn = (cm.getMode().name === 'javascript' && CloudPebble.TSCompletions.isAvailable())
+                ? CloudPebble.TSCompletions.complete
+                : CloudPebble.Editor.Autocomplete.complete;
+            cm.showHint({hint: hintFn, completeSingle: false});
         };
         CodeMirror.commands.save = function(cm) {
             cm.cloudpebble_save().catch(alert);;

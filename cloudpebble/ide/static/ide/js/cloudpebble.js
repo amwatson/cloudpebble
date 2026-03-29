@@ -121,6 +121,10 @@ CloudPebble.Init = function() {
         });
         CloudPebble.Emulator.init();
         CloudPebble.YCM.initialise();
+        // Init TypeScript completions for JS project types (alloy, rocky, pebblejs)
+        if (CloudPebble.ProjectProperties.js_only || data.type === 'alloy') {
+            CloudPebble.TSCompletions.init(TS_TYPINGS_URL);
+        }
         CloudPebble.Sidebar.SetProjectType(data.type);
         CloudPebble.Ready = true;
 

@@ -26,6 +26,26 @@
 <link rel="stylesheet" href="{%  static 'jquery-textext/src/css/textext.plugin.prompt.css' %}" type="text/css" />
 <link rel="stylesheet" href="{%  static 'jquery-textext/src/css/textext.plugin.arrow.css' %}" type="text/css" />
 
+<style>
+.ts-completion-icon {
+    display: inline-block;
+    width: 16px;
+    text-align: center;
+    margin-right: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 2px;
+    color: #fff;
+}
+.ts-kind-function .ts-completion-icon { background: #6c3fc4; }
+.ts-kind-property .ts-completion-icon { background: #3b8eea; }
+.ts-kind-variable .ts-completion-icon { background: #3b8eea; }
+.ts-kind-class .ts-completion-icon { background: #e5a732; }
+.ts-kind-module .ts-completion-icon { background: #c45c3f; }
+.ts-kind-keyword .ts-completion-icon { background: #666; }
+.ts-kind-string .ts-completion-icon { background: #5a9e4b; }
+.ts-kind-other .ts-completion-icon { background: #888; }
+</style>
 <link rel="stylesheet" href="{% static 'ide/css/ide.css' %}">
 <link rel="stylesheet" href="{% static 'ide/css/ib.css' %}">
 <link rel="stylesheet" href="{% static 'ide/css/codemirror-default.css' %}">
@@ -544,6 +564,7 @@
 <script type="text/javascript">
 var PROJECT_ID = {{ project.id }};
 var USER_ID = {{ project.owner.id }};
+var TS_TYPINGS_URL = "{% static 'ide/ts-typings/alloy-typings.json' %}";
 // Create consistency with Python, which will dump in capitalised booleans here.
 var True = true;
 var False = false;
@@ -627,6 +648,7 @@ window.JSHINT.errors = window.JSHINT.errors || [];
 <script src="{% static 'ide/js/codefolds.js' %}" type="text/javascript"></script>
 <script src="{% static 'ide/js/syntax.js' %}" type="text/javascript"></script>
 <script src="{% static 'ide/js/autocomplete.js' %}" type="text/javascript"></script>
+<script src="{% static 'ide/js/ts-completions.js' %}" type="text/javascript"></script>
 <script src="{% static 'ide/js/fuzzyprompt.js' %}" type="text/javascript"></script>
 <script src="{% static 'ide/js/live_settings_form.js' %}" type="text/javascript"></script>
 <script src="{% static 'ide/js/compile.js' %}?v=20260226e" type="text/javascript"></script>
