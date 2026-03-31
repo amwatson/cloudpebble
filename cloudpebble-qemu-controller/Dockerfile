@@ -60,6 +60,11 @@ RUN sed -i 's/def _new_pool(self, scheme, host, port):/def _new_pool(self, schem
 RUN sed -i 's/socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)/socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)/' \
   /usr/local/lib/python3.11/site-packages/pypkjs/javascript/safe_requests.py
 
+# Replace pypkjs geolocation: use ip-api.com with user's real IP instead of
+# server IP + offline GeoLiteCity.dat database.
+COPY patch_geolocation.py /tmp/patch_geolocation.py
+RUN python3 /tmp/patch_geolocation.py && rm /tmp/patch_geolocation.py
+
 # Controller deps
 ADD requirements.txt /tmp/requirements.txt
 RUN uv pip install --system -r /tmp/requirements.txt

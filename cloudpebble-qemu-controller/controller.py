@@ -52,7 +52,8 @@ def launch():
         request.form['platform'],
         request.form['version'],
         tz_offset=(int(request.form['tz_offset']) if 'tz_offset' in request.form else None),
-        oauth=request.form.get('oauth', None)
+        oauth=request.form.get('oauth', None),
+        client_ip=request.form.get('client_ip', '')
     )
     emulators[uuid] = emu
     emu.last_ping = now()

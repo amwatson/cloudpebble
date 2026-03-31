@@ -55,6 +55,7 @@ def launch_emulator(request):
                 logger.info("old instance is dead.")
 
     token = _generate_token()
+    client_ip = request.META.get('HTTP_X_REAL_IP') or request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')
     servers = set(settings.QEMU_URLS)
     while len(servers) > 0:
         server = random.choice(list(servers))
@@ -65,7 +66,8 @@ def launch_emulator(request):
                                          'platform': platform,
                                          'version': version,
                                          'oauth': oauth,
-                                         'tz_offset': tz_offset},
+                                         'tz_offset': tz_offset,
+                                         'client_ip': client_ip},
                                    headers={'Authorization': settings.QEMU_LAUNCH_AUTH_HEADER},
                                    timeout=settings.QEMU_LAUNCH_TIMEOUT, verify=False)
             result.raise_for_status()

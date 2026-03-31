@@ -23,7 +23,7 @@ def _free_display(display):
 
 
 class Emulator(object):
-    def __init__(self, token, platform, version, tz_offset=None, oauth=None):
+    def __init__(self, token, platform, version, tz_offset=None, oauth=None, client_ip=''):
         self.token = token
         self.qemu = None
         self.pkjs = None
@@ -38,6 +38,7 @@ class Emulator(object):
         self.version = version
         self.tz_offset = tz_offset
         self.oauth = oauth
+        self.client_ip = client_ip
         self.persist_dir = None
 
     def run(self):
@@ -212,6 +213,8 @@ class Emulator(object):
         minutes = abs(self.tz_offset % 60)
         tz = "PBL%+03d:%02d" % (-hours, minutes)  # Why minus? Because POSIX is backwards.
         env['TZ'] = tz
+        if self.client_ip:
+            env['PYPKJS_CLIENT_IP'] = self.client_ip
         if self.oauth is not None:
             oauth_arg = ['--oauth', self.oauth]
         else:
