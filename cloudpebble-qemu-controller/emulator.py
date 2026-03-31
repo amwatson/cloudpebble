@@ -215,6 +215,9 @@ class Emulator(object):
         env['TZ'] = tz
         if self.client_ip:
             env['PYPKJS_CLIENT_IP'] = self.client_ip
+            logging.info("GEOLOC setting PYPKJS_CLIENT_IP=%s for pypkjs", self.client_ip)
+        else:
+            logging.warning("GEOLOC no client_ip available for pypkjs")
         if self.oauth is not None:
             oauth_arg = ['--oauth', self.oauth]
         else:

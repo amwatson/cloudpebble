@@ -47,13 +47,15 @@ def launch():
     uuid = uuid4()
     if '/' in request.form['platform'] or '/' in request.form['version']:
         abort(400)
+    client_ip = request.form.get('client_ip', '')
+    logging.info("GEOLOC controller received client_ip=%r from web", client_ip)
     emu = Emulator(
         request.form['token'],
         request.form['platform'],
         request.form['version'],
         tz_offset=(int(request.form['tz_offset']) if 'tz_offset' in request.form else None),
         oauth=request.form.get('oauth', None),
-        client_ip=request.form.get('client_ip', '')
+        client_ip=client_ip
     )
     emulators[uuid] = emu
     emu.last_ping = now()

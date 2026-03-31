@@ -55,7 +55,19 @@ def launch_emulator(request):
                 logger.info("old instance is dead.")
 
     token = _generate_token()
-    client_ip = request.META.get('HTTP_X_REAL_IP') or request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')
+    # X-Forwarded-For first entry is the real client IP (set by Cloudflare or outer proxy).
+    # X-Real-IP can be a Docker bridge IP on dev, so prefer XFF.
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    client_ip = (request.META.get('HTTP_CF_CONNECTING_IP')
+                 or (xff.split(',')[0].strip() if xff else '')
+                 or request.META.get('HTTP_X_REAL_IP')
+                 or request.META.get('REMOTE_ADDR', ''))
+    logger.info("launch_emulator: client_ip=%s (CF=%s, XRI=%s, XFF=%s, RA=%s)",
+                client_ip,
+                request.META.get('HTTP_CF_CONNECTING_IP'),
+                request.META.get('HTTP_X_REAL_IP'),
+                request.META.get('HTTP_X_FORWARDED_FOR'),
+                request.META.get('REMOTE_ADDR'))
     servers = set(settings.QEMU_URLS)
     while len(servers) > 0:
         server = random.choice(list(servers))
