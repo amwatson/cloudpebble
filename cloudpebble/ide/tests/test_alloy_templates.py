@@ -56,7 +56,7 @@ class TestAlloyTemplates(TestCase):
         self._write_template('piu/apps/gravity')
         self._write_template('another')
         self._write_template('nonmoddable', project_type='native')
-        for part in ['part1', 'part2', 'part3', 'part4', 'part5']:
+        for part in ['part1', 'part2', 'part3', 'part4', 'part5', 'part6']:
             self._write_tutorial_part(part)
 
         with mock.patch('ide.utils.alloy_templates._examples_root', return_value=self.examples_root), \
@@ -65,18 +65,19 @@ class TestAlloyTemplates(TestCase):
 
         ids = [template['id'] for template in templates]
         self.assertEqual(
-            ids[:5],
+            ids[:6],
             [
                 'watchface-tutorial/part1',
                 'watchface-tutorial/part2',
                 'watchface-tutorial/part3',
                 'watchface-tutorial/part4',
                 'watchface-tutorial/part5',
+                'watchface-tutorial/part6',
             ]
         )
-        self.assertEqual(ids[5], 'piu/watchfaces/cupertino')
-        self.assertEqual(ids[6:8], ['piu/watchfaces/london', 'piu/watchfaces/redmond'])
-        self.assertEqual(ids[8:10], ['piu/apps/gravity', 'piu/apps/words'])
+        self.assertEqual(ids[6], 'piu/watchfaces/cupertino')
+        self.assertEqual(ids[7:9], ['piu/watchfaces/london', 'piu/watchfaces/redmond'])
+        self.assertEqual(ids[9:11], ['piu/apps/gravity', 'piu/apps/words'])
         self.assertGreater(ids.index('hellopebble'), ids.index('piu/apps/words'))
         self.assertGreater(ids.index('hellowatchface'), ids.index('piu/apps/words'))
         self.assertGreater(ids.index('hellofetch'), ids.index('piu/apps/words'))
@@ -88,7 +89,8 @@ class TestAlloyTemplates(TestCase):
         self.assertEqual(labels['watchface-tutorial/part2'], 'Customizing Your Watchface')
         self.assertEqual(labels['watchface-tutorial/part3'], 'Adding Battery and Bluetooth')
         self.assertEqual(labels['watchface-tutorial/part4'], 'Adding Weather')
-        self.assertEqual(labels['watchface-tutorial/part5'], 'Adding User Settings')
+        self.assertEqual(labels['watchface-tutorial/part5'], 'Timeline Peek')
+        self.assertEqual(labels['watchface-tutorial/part6'], 'Adding User Settings')
         groups = {t['id']: t['group'] for t in templates}
         self.assertEqual(groups['watchface-tutorial/part1'], 'watchface-tutorial/')
         dirs = {t['id']: t['dir'] for t in templates}

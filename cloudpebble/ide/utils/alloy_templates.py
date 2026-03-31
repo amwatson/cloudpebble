@@ -11,7 +11,8 @@ WATCHFACE_TUTORIAL_PARTS = [
     ('part2', 'Customizing Your Watchface'),
     ('part3', 'Adding Battery and Bluetooth'),
     ('part4', 'Adding Weather'),
-    ('part5', 'Adding User Settings'),
+    ('part5', 'Timeline Peek'),
+    ('part6', 'Adding User Settings'),
 ]
 
 
