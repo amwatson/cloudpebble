@@ -34,8 +34,8 @@ TEMPLATES = [
     {
         'type': 'alloy',
         'platform': 'emery',
-        'params': {'alloy_template': 'watchface-tutorial/part5'},
-        'label': 'alloy watchface-tutorial/part5 "Adding User Settings"',
+        'params': {'alloy_template': 'watchface-tutorial/part6'},
+        'label': 'alloy watchface-tutorial/part6 "Adding User Settings"',
     },
 ]
 
