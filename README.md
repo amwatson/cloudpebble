@@ -15,6 +15,12 @@ docker compose up
 # Open http://localhost:8080 and register an account
 ```
 
+On Apple Silicon, the default compose config uses `linux/amd64` for `web` and
+`celery` because `pebble-tool` transitively depends on `stpyv8`, which does not
+currently ship Linux arm64 wheels. You can override with
+`CLOUDPEBBLE_PLATFORM=linux/amd64` (explicit) or another platform if your
+environment supports it.
+
 ### Test GitHub Repo Sync locally
 
 The `GitHub Repo Sync` card changes based on `PUBLIC_URL`, not the browser hostname.

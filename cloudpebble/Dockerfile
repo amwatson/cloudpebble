@@ -2,14 +2,20 @@ FROM python:3.11-slim-bookworm
 LABEL maintainer="CloudPebble Contributors"
 
 ENV NPM_CONFIG_LOGLEVEL=info NODE_VERSION=20.11.0 DJANGO_VERSION=4.2 NODEJS_CHECK_SIGNATURES=no
+ARG TARGETARCH
 
 # Node stuff.
 RUN apt-get update && apt-get install -y curl && \
-  curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz" && \
+  case "$TARGETARCH" in \
+    amd64) NODE_DIST_ARCH="x64" ;; \
+    arm64) NODE_DIST_ARCH="arm64" ;; \
+    *) echo "Unsupported TARGETARCH: $TARGETARCH" && exit 1 ;; \
+  esac && \
+  curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$NODE_DIST_ARCH.tar.gz" && \
   curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/SHASUMS256.txt.asc" && \
-  grep " node-v$NODE_VERSION-linux-x64.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - && \
-  tar -xzf "node-v$NODE_VERSION-linux-x64.tar.gz" -C /usr/local --strip-components=1 && \
-  rm "node-v$NODE_VERSION-linux-x64.tar.gz" SHASUMS256.txt.asc
+  grep " node-v$NODE_VERSION-linux-$NODE_DIST_ARCH.tar.gz\$" SHASUMS256.txt.asc | sha256sum -c - && \
+  tar -xzf "node-v$NODE_VERSION-linux-$NODE_DIST_ARCH.tar.gz" -C /usr/local --strip-components=1 && \
+  rm "node-v$NODE_VERSION-linux-$NODE_DIST_ARCH.tar.gz" SHASUMS256.txt.asc
 
 RUN npm install -g jshint@2.13.6 typescript@3.9.10
 
@@ -37,7 +43,7 @@ RUN npm install -g bower@1.8.14 && echo '{"allow_root": true}' > ~/.bowerrc
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install pebble-tool via uv
+# Install pebble-tool via uv.
 RUN uv tool install pebble-tool --python 3.11
 
 # Ensure pebble is in PATH

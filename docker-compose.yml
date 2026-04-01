@@ -4,7 +4,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_PORT:-8080}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -13,6 +13,9 @@ services:
       # - ycmd  # Optional - code completion
 
   web:
+    # stpyv8 (transitive via pebble-tool -> pypkjs) does not provide Linux arm64 wheels.
+    # Force amd64 image builds/runs so Apple Silicon can run via Docker's emulation.
+    platform: ${CLOUDPEBBLE_PLATFORM:-linux/amd64}
     build: cloudpebble/
     links:
       - redis
@@ -52,6 +55,7 @@ services:
       - REDIS_URL=${REDIS_URL:-}
 
   celery:
+    platform: ${CLOUDPEBBLE_PLATFORM:-linux/amd64}
     build: cloudpebble/
     links:
       - redis
