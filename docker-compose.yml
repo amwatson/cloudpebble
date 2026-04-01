@@ -37,7 +37,7 @@ services:
       - AWS_S3_BUILDS_BUCKET=${AWS_S3_BUILDS_BUCKET:-builds.cloudpebble.net}
       - AWS_S3_EXPORT_BUCKET=${AWS_S3_EXPORT_BUCKET:-export.cloudpebble.net}
       - MEDIA_URL=${PUBLIC_URL}/s3builds/
-      - QEMU_URLS=${PUBLIC_URL}/
+      - QEMU_URLS=http://qemu/
       - YCM_URLS=http://ycmd:80/
       - YCMD_PUBLIC_URL=${YCMD_PUBLIC_URL:-}
       - PUBLIC_URL=${PUBLIC_URL}/
@@ -84,6 +84,8 @@ services:
       - REDIS_URL=${REDIS_URL:-}
 
   qemu:
+    # pypkjs depends on stpyv8, which currently lacks Linux arm64 wheel support.
+    platform: ${CLOUDPEBBLE_PLATFORM:-linux/amd64}
     build: cloudpebble-qemu-controller/
     restart: unless-stopped
     environment:
