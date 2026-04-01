@@ -51,10 +51,16 @@ def init_autocomplete(request, project_id):
 
 
 def _choose_ycm_server():
+    if not settings.YCM_URLS:
+        return None
     return random.choice(settings.YCM_URLS)
 
 
 def _spin_up_server(request):
+    if not settings.YCM_URLS:
+        logger.info("No YCM servers configured; skipping autocomplete spinup.")
+        return {'success': False, 'error': 'No YCM servers configured'}
+
     servers = set(settings.YCM_URLS)
     while len(servers) > 0:
         server = random.choice(list(servers))
@@ -82,8 +88,7 @@ def _spin_up_server(request):
                     }
 
         except (requests.RequestException, ValueError):
-            import traceback
-            traceback.print_exc()
+            logger.debug("YCM request to %s failed", server, exc_info=True)
         logger.warning("Server %s failed; trying another.", server)
     # No servers responded — fail gracefully so the frontend can skip code completion.
     return {'success': False, 'error': 'No YCM servers available'}

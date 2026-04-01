@@ -438,11 +438,16 @@ LIBPEBBLE_PROXY = _environ.get('LIBPEBBLE_PROXY', 'wss://cloudpebble-proxy.repeb
 
 CLOUDPEBBLE_PROXY = _environ.get('CLOUDPEBBLE_PROXY', 'wss://cloudpebble-proxy.repebble.com/tool')
 
-YCM_URLS = _environ.get('YCM_URLS', 'http://localhost:8002/').split(',')
+def _parse_service_urls(value, default=''):
+    raw = _environ.get(value, default)
+    return [url.strip() for url in raw.split(',') if url.strip()]
+
+
+YCM_URLS = _parse_service_urls('YCM_URLS', '')
 YCMD_PUBLIC_URL = _environ.get('YCMD_PUBLIC_URL', None) or None
 COMPLETION_CERTS = _environ.get('COMPLETION_CERTS', os.getcwd() + '/completion-certs.crt')
 
-QEMU_URLS = _environ.get('QEMU_URLS', 'http://qemu/').split(',')
+QEMU_URLS = _parse_service_urls('QEMU_URLS', 'http://qemu/')
 QEMU_PUBLIC_URL = _environ.get('QEMU_PUBLIC_URL', None) or None
 QEMU_LAUNCH_AUTH_HEADER = _environ.get('QEMU_LAUNCH_AUTH_HEADER', 'secret')
 QEMU_LAUNCH_TIMEOUT = int(_environ.get('QEMU_LAUNCH_TIMEOUT', 25))

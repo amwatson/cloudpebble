@@ -38,7 +38,9 @@ services:
       - AWS_S3_EXPORT_BUCKET=${AWS_S3_EXPORT_BUCKET:-export.cloudpebble.net}
       - MEDIA_URL=${PUBLIC_URL}/s3builds/
       - QEMU_URLS=http://qemu/
-      - YCM_URLS=http://ycmd:80/
+      - QEMU_PUBLIC_URL=${PUBLIC_URL}/
+      - QEMU_LAUNCH_TIMEOUT=${QEMU_LAUNCH_TIMEOUT:-90}
+      - YCM_URLS=${YCM_URLS:-}
       - YCMD_PUBLIC_URL=${YCMD_PUBLIC_URL:-}
       - PUBLIC_URL=${PUBLIC_URL}/
       - EXPECT_SSL=${EXPECT_SSL:-no}
@@ -90,6 +92,8 @@ services:
     restart: unless-stopped
     environment:
       - EMULATOR_FIXED_LIMIT=${EMULATOR_FIXED_LIMIT:-90}
+      - EMULATOR_IDLE_TIMEOUT=${EMULATOR_IDLE_TIMEOUT:-1800}
+      - EMULATOR_READY_TIMEOUT=${EMULATOR_READY_TIMEOUT:-240}
     profiles:
       - emulator
 

@@ -196,15 +196,26 @@ class Emulator(object):
         else:
             raise Exception("Emulator launch timed out.")
 
+        s.settimeout(0.5)
         received = b''
-        for i in range(150):
-            gevent.sleep(0.2)
-            received += s.recv(256)
+        deadline = gevent.Timeout.start_new(settings.EMULATOR_READY_TIMEOUT)
+        try:
+            while True:
+                gevent.sleep(0.2)
+                try:
+                    chunk = s.recv(256)
+                except socket.timeout:
+                    chunk = b''
+                if chunk:
+                    received += chunk
             # PBL-21275: we'll add less hacky solutions for this to the firmware.
-            if b"<SDK Home>" in received or b"<Launcher>" in received or b"Ready for communication" in received:
-                break
-        else:
-            raise Exception("Didn't get ready message from firmware.")
+                if b"<SDK Home>" in received or b"<Launcher>" in received or b"Ready for communication" in received:
+                    break
+        except gevent.Timeout:
+            raise Exception("Didn't get ready message from firmware before timeout (%ss)." %
+                            settings.EMULATOR_READY_TIMEOUT)
+        finally:
+            deadline.cancel()
         s.close()
 
     def _spawn_pkjs(self):

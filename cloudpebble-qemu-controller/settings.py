@@ -5,6 +5,8 @@ import multiprocessing
 
 LAUNCH_AUTH_HEADER = env.get('LAUNCH_AUTH_HEADER', 'secret')
 EMULATOR_LIMIT = int(env.get('EMULATOR_FIXED_LIMIT', multiprocessing.cpu_count() * 12))
+EMULATOR_IDLE_TIMEOUT = int(env.get('EMULATOR_IDLE_TIMEOUT', 300))
+EMULATOR_READY_TIMEOUT = int(env.get('EMULATOR_READY_TIMEOUT', 120))
 QEMU_DIR = env['QEMU_DIR']
 QEMU_BIN = env.get('QEMU_BIN', 'qemu-system-arm')
 

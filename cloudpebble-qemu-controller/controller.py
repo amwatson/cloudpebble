@@ -177,7 +177,7 @@ def _kill_idle_emulators():
                 to_kill = []
                 for key, emulator in list(emulators.items()):
                     logging.debug("checking %s", key)
-                    if now() - emulator.last_ping > 300:
+                    if now() - emulator.last_ping > settings.EMULATOR_IDLE_TIMEOUT:
                         to_kill.append(key)
                     else:
                         logging.debug("okay; last ping: %s", emulator.last_ping)
@@ -226,7 +226,10 @@ def drop_privileges(uid_name='nobody', gid_name='nogroup'):
     # Ensure a very conservative umask
     os.umask(0o77)
 
-logging.info("Emulator limit: %d", settings.EMULATOR_LIMIT)
+logging.info("Emulator limit: %d, idle timeout: %ds, ready timeout: %ds",
+             settings.EMULATOR_LIMIT,
+             settings.EMULATOR_IDLE_TIMEOUT,
+             settings.EMULATOR_READY_TIMEOUT)
 
 class WebSocketFixMiddleware(object):
     """Werkzeug 2.x+ has WebSocket-aware routing that rejects WS requests
