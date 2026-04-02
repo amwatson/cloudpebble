@@ -15,20 +15,6 @@ docker compose up
 # Open http://localhost:8080 and register an account
 ```
 
-On Apple Silicon, the default compose config uses `linux/amd64` for `web`,
-`celery`, and `qemu` because `pebble-tool`/`pypkjs` transitively depend on
-`stpyv8`, which does not currently ship Linux arm64 wheels. You can override with
-`CLOUDPEBBLE_PLATFORM=linux/amd64` (explicit) or another platform if your
-environment supports it.
-<<<<<<< ours
-=======
-Emulator startup can be slower under emulation; if launches time out, set
-`QEMU_LAUNCH_TIMEOUT=90` (or higher) in your environment or `.env`.
-If QEMU boots but IDE launch still times out, also set
-`EMULATOR_READY_TIMEOUT=240` (or higher) so the qemu-controller waits longer
-for firmware readiness before returning.
->>>>>>> theirs
-
 ### Test GitHub Repo Sync locally
 
 The `GitHub Repo Sync` card changes based on `PUBLIC_URL`, not the browser hostname.
@@ -86,15 +72,6 @@ Optional services (emulator, code completion):
 
 ```bash
 docker compose --profile emulator --profile codecomplete up -d
-```
-
-By default, autocomplete is disabled in local docker-compose runs unless a
-`YCM_URLS` value is provided. To enable code completion with the `codecomplete`
-profile, set:
-
-```bash
-export YCM_URLS=http://ycmd:80/
-docker compose --profile codecomplete up -d
 ```
 
 ## Host it easily on exe.dev
