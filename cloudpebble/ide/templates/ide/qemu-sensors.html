@@ -24,77 +24,28 @@
             $('.heading').text(Math.round(heading));
         }, 250);
         var isAndroid = /Android/i.test(navigator.userAgent);
-        var attachSensorHandlers = function() {
-            window.ondevicemotion = _.throttle(function(e) {
-                if(!e.accelerationIncludingGravity) {
-                    return;
-                }
-                var accel = _.clone(e.accelerationIncludingGravity);
-                if(accel.x === null || accel.y === null || accel.z === null) {
-                    return;
-                }
-                // *cry*
-                if(isAndroid) {
-                    accel.x = -accel.x;
-                    accel.y = -accel.y;
-                    accel.z = -accel.z;
-                }
-                pebble.emu_set_accel([[accel.x, accel.y, accel.z]]);
-                updateAccelText(accel);
-            }, 10);
-            window.ondeviceorientation = _.throttle(function(e) {
-                var heading = e.webkitCompassHeading !== undefined ? e.webkitCompassHeading : (e.alpha !== null ? 360 - e.alpha : null);
-                if(heading === null || isNaN(heading)) {
-                    return;
-                }
-                pebble.emu_set_compass(heading, 2);
-                updateHeadingText(heading);
-            }, 100);
-            $('.state').text("Transmitting…");
-            $('.stuff').show();
-            $('.enable-sensors').hide();
-        };
-
-        var showBlockedSensorsState = function() {
-            $('.state').text("Sensors are blocked. Allow Motion & Orientation Access in Safari settings, then retry.");
-            $('.stuff').hide();
-            $('.enable-sensors').show();
-        };
-
-        var needsMotionPermission = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';
-        var needsOrientationPermission = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
-        if(needsMotionPermission || needsOrientationPermission) {
-            $('.state').text("Tap Enable Sensors to allow motion and orientation access.");
-            $('.stuff').hide();
-            $('.enable-sensors').show().off('click').on('click', function() {
-                var requests = [];
-                if(needsMotionPermission) {
-                    requests.push(DeviceMotionEvent.requestPermission());
-                }
-                if(needsOrientationPermission) {
-                    requests.push(DeviceOrientationEvent.requestPermission());
-                }
-                Promise.all(requests).then(function(results) {
-                    var granted = _.every(results, function(result) {
-                        return result === 'granted';
-                    });
-                    if(granted) {
-                        attachSensorHandlers();
-                    } else {
-                        showBlockedSensorsState();
-                    }
-                }).catch(function() {
-                    showBlockedSensorsState();
-                });
-            });
-        } else {
-            attachSensorHandlers();
-        }
+        window.ondevicemotion = _.throttle(function(e) {
+            var accel = _.clone(e.accelerationIncludingGravity);
+            // *cry*
+            if(isAndroid) {
+                accel.x = -accel.x;
+                accel.y = -accel.y;
+                accel.z = -accel.z;
+            }
+            pebble.emu_set_accel([[accel.x, accel.y, accel.z]]);
+            updateAccelText(accel);
+        }, 10);
+        window.ondeviceorientation = _.throttle(function(e) {
+            var heading = e.webkitCompassHeading !== undefined ? e.webkitCompassHeading : 360 - e.alpha;
+            pebble.emu_set_compass(heading, 2);
+            updateHeadingText(heading);
+        }, 100);
+        $('.state').text("Transmitting…");
+        $('.stuff').show()
     });
     pebble.on('close', function() {
         window.ondevicemotion = null;
         window.ondeviceorientation = null;
-        $('.enable-sensors').hide();
         $('.state').text("Disconnected.");
         $('.stuff').hide();
     });
@@ -107,7 +58,6 @@
     <div class="content">
         <!-- I still don't know how to vertically centre things with CSS. -->
         <h2 class="state">Connecting…</h2>
-        <button class="button enable-sensors" style="display: none; margin-top: 20px;">Enable Sensors</button>
         <div class="stuff" style="display: none; margin-top: 40px;">
             <h3>Heading: <span class="heading">…</span>°</h3>
             <h3>Acceleration: <span class="accel-x">0</span>, <span class="accel-y">0</span>, <span class="accel-z">0</span></h3>
