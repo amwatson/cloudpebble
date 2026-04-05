@@ -248,8 +248,8 @@ def do_import_archive(project_id, archive, delete_project=False):
                             # A single root resource maps to one ResourceFile row, so key properties must match.
                             if desired_resources[root_file_name]['kind'] != resource['type']:
                                 raise ValueError("Inconsistent resource type for %s" % root_file_name)
-                            if desired_resources[root_file_name]['is_menu_icon'] != resource.get('menuIcon', False):
-                                raise ValueError("Inconsistent menuIcon for %s" % root_file_name)
+                            if resource.get('menuIcon', False):
+                                desired_resources[root_file_name]['is_menu_icon'] = True
 
                         desired_resources[root_file_name]['resources'].append(resource)
                         file_exists_for_root[root_file_name] = False
