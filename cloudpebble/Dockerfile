@@ -44,7 +44,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install pebble-tool via uv.
-RUN uv tool install pebble-tool --python 3.11
+RUN /usr/local/bin/pip install --no-cache-dir pebble-tool
 
 # Ensure pebble is in PATH
 ENV PATH="/root/.local/share/uv/tools/pebble-tool/bin:$PATH"
@@ -56,7 +56,7 @@ RUN python - <<'PY'
 from pathlib import Path
 import re
 
-manager = Path("/root/.local/share/uv/tools/pebble-tool/lib/python3.11/site-packages/pebble_tool/sdk/manager.py")
+manager = Path("/usr/local/lib/python3.11/site-packages/pebble_tool/sdk/manager.py")
 text = manager.read_text()
 old = "bar.update(bar.currval + len(content))"
 new = "bar.update(min(getattr(bar, 'max_value', getattr(bar, 'maxval', bar.currval + len(content))), bar.currval + len(content)))"
