@@ -36,16 +36,12 @@ RUN SDK_INFO=$(curl -sf https://sdk.repebble.com/v1/files/sdk-core/4.9.148) && \
   rm /tmp/sdk.tar.gz && \
   echo "Firmware platforms:" && ls /sdk-images/
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
-
 # Install pypkjs from coredevices
-RUN uv pip install --system git+https://github.com/coredevices/pypkjs.git
+RUN python3 -m pip install --no-cache-dir git+https://github.com/coredevices/pypkjs.git
 
 # pypkjs relies on requests/urllib3 internals that changed in urllib3 2.x.
 # Pin to known-compatible versions so XMLHttpRequest works in emulator PKJS.
-RUN uv pip install --system "requests<2.32" "urllib3<2"
+RUN python3 -m pip install --no-cache-dir "requests<2.32" "urllib3<2"
 
 # Fix pypkjs Python 3 bug: struct.unpack returns bytes but token from
 # argparse is str, so auth comparison always fails. Decode bytes to str.
@@ -67,7 +63,7 @@ RUN python3 /tmp/patch_geolocation.py && rm /tmp/patch_geolocation.py
 
 # Controller deps
 ADD requirements.txt /tmp/requirements.txt
-RUN uv pip install --system -r /tmp/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY . /code
 WORKDIR /code
