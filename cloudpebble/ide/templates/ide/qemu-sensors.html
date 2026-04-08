@@ -13,6 +13,7 @@
     var URL = "{{ url | escapejs }}";
     var TOKEN = "{{ token | escapejs }}";
     var pebble = new Pebble(URL, TOKEN);
+
     pebble.on('open', function() {
         var updateAccelText = _.throttle(function(accel) {
             $('.accel-x').text(accel.x.toFixed(2));
@@ -23,31 +24,67 @@
         var updateHeadingText = _.throttle(function(heading) {
             $('.heading').text(Math.round(heading));
         }, 250);
+
         var isAndroid = /Android/i.test(navigator.userAgent);
-        window.ondevicemotion = _.throttle(function(e) {
-            var accel = _.clone(e.accelerationIncludingGravity);
-            // *cry*
-            if(isAndroid) {
-                accel.x = -accel.x;
-                accel.y = -accel.y;
-                accel.z = -accel.z;
-            }
-            pebble.emu_set_accel([[accel.x, accel.y, accel.z]]);
-            updateAccelText(accel);
-        }, 10);
-        window.ondeviceorientation = _.throttle(function(e) {
-            var heading = e.webkitCompassHeading !== undefined ? e.webkitCompassHeading : 360 - e.alpha;
-            pebble.emu_set_compass(heading, 2);
-            updateHeadingText(heading);
-        }, 100);
-        $('.state').text("Transmitting…");
-        $('.stuff').show()
+
+        function attachSensors() {
+            window.ondevicemotion = _.throttle(function(e) {
+                var accel = _.clone(e.accelerationIncludingGravity);
+                // *cry*
+                if(isAndroid) {
+                    accel.x = -accel.x;
+                    accel.y = -accel.y;
+                    accel.z = -accel.z;
+                }
+                pebble.emu_set_accel([[accel.x, accel.y, accel.z]]);
+                updateAccelText(accel);
+            }, 10);
+            window.ondeviceorientation = _.throttle(function(e) {
+                var heading = e.webkitCompassHeading !== undefined ? e.webkitCompassHeading : 360 - e.alpha;
+                pebble.emu_set_compass(heading, 2);
+                updateHeadingText(heading);
+            }, 100);
+            $('.state').text("Transmitting…");
+            $('.stuff').show();
+        }
+
+        if (!window.isSecureContext) {
+            // DeviceMotion/Orientation events are blocked on insecure origins (http://).
+            // The browser silently delivers no events — there is no prompt or toggle.
+            $('.state').text("Connected (sensors unavailable: page must be served over HTTPS).");
+            $('.stuff').hide();
+        } else if (typeof DeviceMotionEvent !== 'undefined' &&
+                   typeof DeviceMotionEvent.requestPermission === 'function') {
+            // iOS 13+: permission must be requested from a user gesture.
+            // Assigning ondevicemotion before the grant does nothing.
+            $('.state').text("Connected — tap the button to enable sensors.");
+            $('.permission-btn').show();
+            $('.permission-btn').one('click', function() {
+                $('.permission-btn').prop('disabled', true);
+                DeviceMotionEvent.requestPermission()
+                    .then(function(response) {
+                        if (response === 'granted') {
+                            $('.permission-btn').hide();
+                            attachSensors();
+                        } else {
+                            $('.state').text("Sensor permission denied.");
+                        }
+                    })
+                    .catch(function() {
+                        $('.state').text("Could not request sensor permission.");
+                    });
+            });
+        } else {
+            attachSensors();
+        }
     });
+
     pebble.on('close', function() {
         window.ondevicemotion = null;
         window.ondeviceorientation = null;
         $('.state').text("Disconnected.");
         $('.stuff').hide();
+        $('.permission-btn').hide();
     });
     </script>
 {% endblock %}
@@ -58,6 +95,9 @@
     <div class="content">
         <!-- I still don't know how to vertically centre things with CSS. -->
         <h2 class="state">Connecting…</h2>
+        <button class="permission-btn" style="display: none; margin-top: 20px; font-size: 1.2em; padding: 12px 24px;">
+            Enable Sensors
+        </button>
         <div class="stuff" style="display: none; margin-top: 40px;">
             <h3>Heading: <span class="heading">…</span>°</h3>
             <h3>Acceleration: <span class="accel-x">0</span>, <span class="accel-y">0</span>, <span class="accel-z">0</span></h3>
