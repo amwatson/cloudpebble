@@ -24,7 +24,6 @@
             $('.heading').text(Math.round(heading));
         }, 250);
         var isAndroid = /Android/i.test(navigator.userAgent);
-
         // DeviceMotion/Orientation events are blocked on insecure origins (http://) for all major browsers 
 	// (see https://w3c.github.io/deviceorientation).
         if(!window.isSecureContext) {
@@ -67,6 +66,7 @@
         };
 
         var showBlockedSensorsState = function() {
+<<<<<<< HEAD
             $('.state').text("Sensors are blocked. Allow motion/orientation permission when prompted and retry.");
             $('.stuff').hide();
             $('.enable-sensors').show();
@@ -83,6 +83,29 @@
                     results.push(result);
                 });
             }
+=======
+            var secure = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if(!secure) {
+                $('.state').text("Sensors are blocked on insecure origins. Open this page over HTTPS (or localhost) and retry.");
+            } else {
+                $('.state').text("Sensors are blocked. Allow motion/orientation permission when prompted and retry.");
+            }
+            $('.stuff').hide();
+            $('.enable-sensors').show();
+        };
+
+        var requestPermissionSequentially = function(needsMotionPermission, needsOrientationPermission) {
+            var results = [];
+            var chain = Promise.resolve();
+
+            if(needsMotionPermission) {
+                chain = chain.then(function() {
+                    return DeviceMotionEvent.requestPermission();
+                }).then(function(result) {
+                    results.push(result);
+                });
+            }
+>>>>>>> 0862a1f (Update iOS sensor permissions request on qemu-sensors page)
 
             if(needsOrientationPermission) {
                 chain = chain.then(function() {
