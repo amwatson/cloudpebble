@@ -23,7 +23,6 @@
         var updateHeadingText = _.throttle(function(heading) {
             $('.heading').text(Math.round(heading));
         }, 250);
-
         var isAndroid = /Android/i.test(navigator.userAgent);
 
         var attachSensorHandlers = function() {
