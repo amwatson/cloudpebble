@@ -26,7 +26,7 @@ SESSION_MAX_AGE = 14 * 24 * 60 * 60  # 14 days
 
 
 def _set_developer_cookie(response, firebase_uid, email, email_verified=False):
-    """Set cross-domain developer session cookie if the user is a registered developer."""
+    """Set cross-domain session cookie for any authenticated user (enables SSO across *.repebble.com)."""
     secret = settings.REPEBBLE_SESSION_SECRET
     if not secret:
         return
@@ -51,15 +51,15 @@ def _set_developer_cookie(response, firebase_uid, email, email_verified=False):
                         [firebase_uid, row[0]],
                     )
 
-        if not row:
-            return
-
+        # Always set the cross-domain session cookie for authenticated users,
+        # even non-developers. The cookie enables SSO across *.repebble.com sites.
+        # Non-developer fields are left empty — custom-token only needs uid.
         now = int(time.time())
         payload = {
             'uid': firebase_uid,
             'email': email,
-            'developerId': row[0],
-            'developerName': row[1] or '',
+            'developerId': row[0] if row else '',
+            'developerName': (row[1] or '') if row else '',
             'iat': now,
             'exp': now + SESSION_MAX_AGE,
         }
